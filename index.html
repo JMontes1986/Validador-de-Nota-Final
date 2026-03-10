@@ -608,17 +608,19 @@ function updateAvg(secId) {
   if (vals.length === 0) {
     avgEl.textContent = "—";
     avgEl.className = "card-avg";
+    formulaEl.innerHTML = "Promedio: —"; 
     return;
-   formulaEl.innerHTML = "Promedio: —";
   }
-  const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
  
-  avgEl.textContent = avg.toFixed(2);
-  const weighted = avg * pctFactor;
+  const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
   const sum = vals.reduce((a, b) => a + b, 0);
+  const weighted = avg * pctFactor;
+ 
   avgEl.textContent = weighted.toFixed(2);
+  avgEl.className = "card-avg " + (avg >= 3 ? "good" : "bad");
+  formulaEl.innerHTML = `Promedio: <strong>${sum.toFixed(2)} / ${vals.length} = ${avg.toFixed(2)}</strong>`;
 }
-formulaEl.innerHTML = `Promedio: <strong>${sum.toFixed(2)} / ${vals.length} = ${avg.toFixed(2)}</strong>`;
+
 function calcular() {
   let total = 0;
   const breakdownHTML = SECTIONS.map(sec => {
