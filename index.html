@@ -537,8 +537,8 @@ function addGrade(secId) {
     <div class="grade-input-wrap">
       <input class="grade-input"
              type="number"
-             min="0" max="10" step="0.1"
-             placeholder="0.0 – 10"
+             min="1" max="5" step="0.1"
+             placeholder="1.0 – 5.0"
              id="inp-${secId}-${idx}"
              oninput="onInput('${secId}', ${idx})"
              onblur="onBlur('${secId}', ${idx})">
@@ -559,7 +559,7 @@ function onInput(secId, idx) {
   const v = parseFloat(inp.value);
   inp.classList.remove("valid", "invalid");
   if (inp.value !== "") {
-    inp.classList.add((v >= 0 && v <= 10) ? "valid" : "invalid");
+    inp.classList.add((v >= 1 && v <= 5) ? "valid" : "invalid");
   }
   updateAvg(secId);
 }
@@ -568,8 +568,8 @@ function onBlur(secId, idx) {
   const inp = document.getElementById(`inp-${secId}-${idx}`);
   if (inp.value !== "") {
     let v = parseFloat(inp.value);
-    if (v < 0) v = 0;
-    if (v > 10) v = 10;
+    if (v < 1) v = 1;
+    if (v > 5) v = 5;
     inp.value = v.toFixed(1);
   }
   updateAvg(secId);
@@ -581,7 +581,7 @@ function getGrades(secId) {
   const vals = [];
   inputs.forEach(inp => {
     const v = parseFloat(inp.value);
-    if (!isNaN(v) && v >= 0 && v <= 10) vals.push(v);
+    if (!isNaN(v) && v >= 1 && v <= 5) vals.push(v);
   });
   return vals;
 }
@@ -596,7 +596,7 @@ function updateAvg(secId) {
   }
   const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
   avgEl.textContent = avg.toFixed(2);
-  avgEl.className = "card-avg " + (avg >= 6 ? "good" : "bad");
+  avgEl.className = "card-avg " + (avg >= 3 ? "good" : "bad");
 }
 
 function calcular() {
@@ -622,7 +622,7 @@ function calcular() {
   summaryEl.style.display = "block";
   summaryEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
 
-  const pass = total >= 6;
+  const pass = total >= 3;
   scoreEl.textContent = total.toFixed(2);
   scoreEl.className   = "summary-score " + (pass ? "pass" : "fail");
   verdictEl.textContent = pass
