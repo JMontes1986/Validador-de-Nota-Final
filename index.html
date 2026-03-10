@@ -289,6 +289,18 @@
     color: white;
   }
 
+  .grade-formula {
+    margin-top: 12px;
+    font-size: 12.5px;
+    color: var(--gray-500);
+    line-height: 1.45;
+  }
+
+  .grade-formula strong {
+    color: var(--navy);
+    font-weight: 600;
+  }
+ 
   /* ─── Summary ─── */
   .summary-card {
     background: var(--navy);
@@ -508,6 +520,7 @@ function buildUI() {
         <button class="add-btn" onclick="addGrade('${sec.id}')">
           <span>＋</span> Agregar nota
         </button>
+        <div class="grade-formula" id="formula-${sec.id}">Promedio: —</div>
       </div>
     `;
     container.appendChild(card);
@@ -589,16 +602,23 @@ function getGrades(secId) {
 function updateAvg(secId) {
   const vals = getGrades(secId);
   const avgEl = document.getElementById(`avg-${secId}`);
+  const formulaEl = document.getElementById(`formula-${secId}`);
+  const sec = SECTIONS.find(s => s.id === secId);
+  const pctFactor = sec ? sec.pct / 100 : 0;
   if (vals.length === 0) {
     avgEl.textContent = "—";
     avgEl.className = "card-avg";
     return;
+   formulaEl.innerHTML = "Promedio: —";
   }
   const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+ 
   avgEl.textContent = avg.toFixed(2);
-  avgEl.className = "card-avg " + (avg >= 3 ? "good" : "bad");
+  const weighted = avg * pctFactor;
+  const sum = vals.reduce((a, b) => a + b, 0);
+  avgEl.textContent = weighted.toFixed(2);
 }
-
+formulaEl.innerHTML = `Promedio: <strong>${sum.toFixed(2)} / ${vals.length} = ${avg.toFixed(2)}</strong>`;
 function calcular() {
   let total = 0;
   const breakdownHTML = SECTIONS.map(sec => {
