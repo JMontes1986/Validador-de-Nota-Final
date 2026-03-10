@@ -1,0 +1,637 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Validador de Notas — Colegio Franciscano Agustín Gemelli</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --navy: #0b2f6e;
+    --navy-light: #1a4a9e;
+    --gold: #c9953a;
+    --gold-light: #f0c06b;
+    --cream: #fdf8f0;
+    --white: #ffffff;
+    --gray-50: #f8f9fc;
+    --gray-100: #eef0f6;
+    --gray-300: #c5c9d8;
+    --gray-500: #7a81a0;
+    --gray-700: #3d4260;
+    --danger: #d94040;
+    --success: #1e8a5e;
+    --success-bg: #e8f7f1;
+    --fail-bg: #fdeaea;
+    --shadow-sm: 0 2px 8px rgba(11,47,110,0.08);
+    --shadow-md: 0 8px 30px rgba(11,47,110,0.12);
+    --shadow-lg: 0 20px 60px rgba(11,47,110,0.16);
+    --radius: 14px;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--cream);
+    min-height: 100vh;
+    color: var(--gray-700);
+    overflow-x: hidden;
+  }
+
+  /* Background texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 10% 0%, rgba(11,47,110,0.06) 0%, transparent 60%),
+      radial-gradient(ellipse 60% 40% at 90% 100%, rgba(201,149,58,0.08) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .page-wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 30px 20px 60px;
+  }
+
+  /* ─── Header ─── */
+  header {
+    text-align: center;
+    margin-bottom: 28px;
+    animation: fadeDown 0.6s ease both;
+  }
+
+  .logo-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--navy);
+    color: white;
+    padding: 10px 22px 10px 16px;
+    border-radius: 50px;
+    margin-bottom: 18px;
+    box-shadow: var(--shadow-md);
+  }
+
+  .logo-icon {
+    width: 36px;
+    height: 36px;
+    background: var(--gold);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+  }
+
+  .logo-text {
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    opacity: 0.9;
+  }
+
+  h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(26px, 5vw, 38px);
+    color: var(--navy);
+    line-height: 1.2;
+    margin-bottom: 8px;
+  }
+
+  .subtitle {
+    font-size: 15px;
+    color: var(--gray-500);
+    font-weight: 400;
+  }
+
+  /* ─── Notice banner ─── */
+  .notice {
+    background: linear-gradient(135deg, #fff8ec, #fff3d6);
+    border: 1.5px solid var(--gold-light);
+    border-radius: var(--radius);
+    padding: 14px 18px;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 28px;
+    animation: fadeDown 0.6s 0.1s ease both;
+    box-shadow: 0 2px 12px rgba(201,149,58,0.1);
+  }
+
+  .notice-icon { font-size: 20px; flex-shrink: 0; margin-top: 1px; }
+
+  .notice-text {
+    font-size: 13.5px;
+    line-height: 1.6;
+    color: #7a5a1e;
+  }
+
+  .notice-text strong {
+    display: block;
+    font-size: 14px;
+    margin-bottom: 2px;
+    color: #5a3e0e;
+  }
+
+  /* ─── Card ─── */
+  .card {
+    background: var(--white);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow-md);
+    overflow: hidden;
+    margin-bottom: 20px;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .card:nth-child(1) { animation-delay: 0.15s; }
+  .card:nth-child(2) { animation-delay: 0.2s; }
+  .card:nth-child(3) { animation-delay: 0.25s; }
+  .card:nth-child(4) { animation-delay: 0.3s; }
+  .card:nth-child(5) { animation-delay: 0.35s; }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 20px;
+    border-bottom: 1.5px solid var(--gray-100);
+    cursor: pointer;
+    user-select: none;
+    transition: background 0.2s;
+  }
+
+  .card-header:hover { background: var(--gray-50); }
+
+  .card-header-left {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .pct-badge {
+    background: var(--navy);
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+  }
+
+  .card-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--navy);
+  }
+
+  .card-avg {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--navy-light);
+    min-width: 52px;
+    text-align: right;
+    transition: color 0.3s;
+  }
+
+  .card-avg.good { color: var(--success); }
+  .card-avg.bad  { color: var(--danger); }
+
+  .card-body {
+    padding: 16px 20px 20px;
+  }
+
+  /* ─── Grade rows ─── */
+  .grades-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .grade-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: fadeIn 0.3s ease both;
+  }
+
+  .grade-label {
+    flex: 1;
+    font-size: 14px;
+    color: var(--gray-500);
+  }
+
+  .grade-input-wrap { position: relative; }
+
+  .grade-input {
+    width: 90px;
+    padding: 8px 12px;
+    border: 1.5px solid var(--gray-300);
+    border-radius: 8px;
+    font-size: 15px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    color: var(--gray-700);
+    text-align: center;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+    appearance: textfield;
+    -moz-appearance: textfield;
+  }
+
+  .grade-input::-webkit-outer-spin-button,
+  .grade-input::-webkit-inner-spin-button { -webkit-appearance: none; }
+
+  .grade-input:focus {
+    border-color: var(--navy-light);
+    box-shadow: 0 0 0 3px rgba(26,74,158,0.1);
+  }
+
+  .grade-input.valid   { border-color: var(--success); }
+  .grade-input.invalid { border-color: var(--danger); }
+
+  .remove-btn {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 1.5px solid var(--gray-300);
+    background: transparent;
+    color: var(--gray-500);
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    transition: all 0.2s;
+    flex-shrink: 0;
+  }
+
+  .remove-btn:hover { background: var(--fail-bg); border-color: var(--danger); color: var(--danger); }
+
+  .add-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 12px;
+    padding: 7px 14px;
+    background: var(--gray-50);
+    border: 1.5px dashed var(--gray-300);
+    border-radius: 8px;
+    font-size: 13px;
+    font-family: 'DM Sans', sans-serif;
+    font-weight: 500;
+    color: var(--gray-500);
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .add-btn:hover {
+    background: var(--navy);
+    border-color: var(--navy);
+    color: white;
+  }
+
+  /* ─── Summary ─── */
+  .summary-card {
+    background: var(--navy);
+    color: white;
+    border-radius: var(--radius);
+    padding: 28px 24px;
+    box-shadow: var(--shadow-lg);
+    animation: fadeUp 0.5s 0.4s ease both;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .summary-card::before {
+    content: '';
+    position: absolute;
+    top: -40px; right: -40px;
+    width: 160px; height: 160px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 50%;
+  }
+
+  .summary-card::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; left: -30px;
+    width: 200px; height: 200px;
+    background: rgba(201,149,58,0.08);
+    border-radius: 50%;
+  }
+
+  .summary-label {
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    opacity: 0.6;
+    margin-bottom: 8px;
+  }
+
+  .summary-score {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(52px, 10vw, 72px);
+    font-weight: 700;
+    line-height: 1;
+    color: var(--gold-light);
+    transition: color 0.4s;
+  }
+
+  .summary-score.pass { color: #7ee8b8; }
+  .summary-score.fail { color: #ff8a8a; }
+
+  .summary-verdict {
+    font-size: 15px;
+    font-weight: 500;
+    opacity: 0.85;
+    margin-top: 6px;
+  }
+
+  .summary-breakdown {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+    margin-top: 22px;
+    padding-top: 22px;
+    border-top: 1px solid rgba(255,255,255,0.12);
+    position: relative;
+    z-index: 1;
+  }
+
+  .breakdown-item {
+    background: rgba(255,255,255,0.07);
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+
+  .breakdown-name {
+    font-size: 11px;
+    opacity: 0.55;
+    margin-bottom: 4px;
+    letter-spacing: 0.04em;
+  }
+
+  .breakdown-val {
+    font-size: 18px;
+    font-weight: 700;
+    color: white;
+  }
+
+  .breakdown-contrib {
+    font-size: 11px;
+    opacity: 0.5;
+    margin-top: 1px;
+  }
+
+  /* ─── Calc button ─── */
+  .calc-btn {
+    display: block;
+    width: 100%;
+    padding: 16px;
+    background: var(--gold);
+    color: white;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s, box-shadow 0.2s;
+    box-shadow: 0 4px 20px rgba(201,149,58,0.35);
+    animation: fadeUp 0.5s 0.45s ease both;
+  }
+
+  .calc-btn:hover { background: #b8841e; box-shadow: 0 6px 28px rgba(201,149,58,0.45); }
+  .calc-btn:active { transform: scale(0.98); }
+
+  /* ─── Footer ─── */
+  footer {
+    text-align: center;
+    margin-top: 36px;
+    font-size: 12px;
+    color: var(--gray-300);
+    animation: fadeUp 0.5s 0.5s ease both;
+  }
+
+  /* ─── Animations ─── */
+  @keyframes fadeDown {
+    from { opacity: 0; transform: translateY(-16px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateX(-8px); }
+    to   { opacity: 1; transform: translateX(0); }
+  }
+
+  @media (max-width: 500px) {
+    .summary-breakdown { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body>
+
+<div class="page-wrapper">
+
+  <!-- Header -->
+  <header>
+    <div class="logo-badge">
+      <div class="logo-icon">🎓</div>
+      <span class="logo-text">Colegio Franciscano Agustín Gemelli</span>
+    </div>
+    <h1>Validador de Nota Final</h1>
+    <p class="subtitle">Herramienta de verificación para padres de familia</p>
+  </header>
+
+  <!-- Notice -->
+  <div class="notice">
+    <span class="notice-icon">🛡️</span>
+    <div class="notice-text">
+      <strong>Herramienta de prueba — Control Académic</strong>
+      Esta calculadora es únicamente para validar y verificar las notas del sistema académico. <strong>No se almacena, guarda ni transmite ningún dato</strong>. Todo el cálculo ocurre localmente en tu dispositivo.
+    </div>
+  </div>
+
+  <!-- Grade sections -->
+  <div id="sections-container"></div>
+
+  <!-- Calculate button -->
+  <button class="calc-btn" onclick="calcular()">✦ Calcular Nota Final</button>
+
+  <!-- Summary -->
+  <div class="summary-card" id="summary" style="display:none; margin-top:20px;">
+    <div style="position:relative;z-index:1;">
+      <div class="summary-label">Nota Final Calculada</div>
+      <div class="summary-score" id="score-display">—</div>
+      <div class="summary-verdict" id="verdict-display"></div>
+      <div class="summary-breakdown" id="breakdown-display"></div>
+    </div>
+  </div>
+
+  <footer>
+    © Colegio Franciscano Agustín Gemelli · Solo para validación · Ningún dato es almacenado
+  </footer>
+</div>
+
+<script>
+const SECTIONS = [
+  { id: "eval",          label: "Evaluaciones",   pct: 30 },
+  { id: "bimestral",     label: "Bimestral",       pct: 30 },
+  { id: "investigativo", label: "Investigativo",   pct: 25 },
+  { id: "actitud",       label: "Actitud",         pct: 10 },
+  { id: "autoevaluacion",label: "Autoevaluación",  pct: 5  },
+];
+
+// Build UI
+function buildUI() {
+  const container = document.getElementById("sections-container");
+  SECTIONS.forEach((sec, si) => {
+    const card = document.createElement("div");
+    card.className = "card";
+    card.id = `card-${sec.id}`;
+
+    card.innerHTML = `
+      <div class="card-header" onclick="toggleCard('${sec.id}')">
+        <div class="card-header-left">
+          <span class="pct-badge">${sec.pct}%</span>
+          <span class="card-title">${sec.label}</span>
+        </div>
+        <span class="card-avg" id="avg-${sec.id}">—</span>
+      </div>
+      <div class="card-body" id="body-${sec.id}">
+        <div class="grades-list" id="list-${sec.id}"></div>
+        <button class="add-btn" onclick="addGrade('${sec.id}')">
+          <span>＋</span> Agregar nota
+        </button>
+      </div>
+    `;
+    container.appendChild(card);
+    addGrade(sec.id); // start with one input
+  });
+}
+
+function toggleCard(id) {
+  const body = document.getElementById(`body-${id}`);
+  body.style.display = body.style.display === "none" ? "" : "none";
+}
+
+let gradeCounters = {};
+
+function addGrade(secId) {
+  if (!gradeCounters[secId]) gradeCounters[secId] = 0;
+  gradeCounters[secId]++;
+  const idx = gradeCounters[secId];
+
+  const list = document.getElementById(`list-${secId}`);
+  const row = document.createElement("div");
+  row.className = "grade-row";
+  row.id = `row-${secId}-${idx}`;
+
+  row.innerHTML = `
+    <span class="grade-label">Nota ${idx}</span>
+    <div class="grade-input-wrap">
+      <input class="grade-input"
+             type="number"
+             min="0" max="10" step="0.1"
+             placeholder="0.0 – 10"
+             id="inp-${secId}-${idx}"
+             oninput="onInput('${secId}', ${idx})"
+             onblur="onBlur('${secId}', ${idx})">
+    </div>
+    <button class="remove-btn" onclick="removeGrade('${secId}', ${idx})" title="Eliminar">✕</button>
+  `;
+  list.appendChild(row);
+}
+
+function removeGrade(secId, idx) {
+  const row = document.getElementById(`row-${secId}-${idx}`);
+  if (row) row.remove();
+  updateAvg(secId);
+}
+
+function onInput(secId, idx) {
+  const inp = document.getElementById(`inp-${secId}-${idx}`);
+  const v = parseFloat(inp.value);
+  inp.classList.remove("valid", "invalid");
+  if (inp.value !== "") {
+    inp.classList.add((v >= 0 && v <= 10) ? "valid" : "invalid");
+  }
+  updateAvg(secId);
+}
+
+function onBlur(secId, idx) {
+  const inp = document.getElementById(`inp-${secId}-${idx}`);
+  if (inp.value !== "") {
+    let v = parseFloat(inp.value);
+    if (v < 0) v = 0;
+    if (v > 10) v = 10;
+    inp.value = v.toFixed(1);
+  }
+  updateAvg(secId);
+}
+
+function getGrades(secId) {
+  const list = document.getElementById(`list-${secId}`);
+  const inputs = list.querySelectorAll(".grade-input");
+  const vals = [];
+  inputs.forEach(inp => {
+    const v = parseFloat(inp.value);
+    if (!isNaN(v) && v >= 0 && v <= 10) vals.push(v);
+  });
+  return vals;
+}
+
+function updateAvg(secId) {
+  const vals = getGrades(secId);
+  const avgEl = document.getElementById(`avg-${secId}`);
+  if (vals.length === 0) {
+    avgEl.textContent = "—";
+    avgEl.className = "card-avg";
+    return;
+  }
+  const avg = vals.reduce((a, b) => a + b, 0) / vals.length;
+  avgEl.textContent = avg.toFixed(2);
+  avgEl.className = "card-avg " + (avg >= 6 ? "good" : "bad");
+}
+
+function calcular() {
+  let total = 0;
+  const breakdownHTML = SECTIONS.map(sec => {
+    const vals = getGrades(sec.id);
+    let avg = vals.length ? vals.reduce((a,b) => a+b, 0) / vals.length : 0;
+    const contrib = avg * (sec.pct / 100);
+    total += contrib;
+    return `
+      <div class="breakdown-item">
+        <div class="breakdown-name">${sec.label}</div>
+        <div class="breakdown-val">${avg.toFixed(2)}</div>
+        <div class="breakdown-contrib">Aporta ${contrib.toFixed(2)} / ${sec.pct}%</div>
+      </div>`;
+  }).join("");
+
+  const scoreEl   = document.getElementById("score-display");
+  const verdictEl = document.getElementById("verdict-display");
+  const summaryEl = document.getElementById("summary");
+  const bdEl      = document.getElementById("breakdown-display");
+
+  summaryEl.style.display = "block";
+  summaryEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+  const pass = total >= 6;
+  scoreEl.textContent = total.toFixed(2);
+  scoreEl.className   = "summary-score " + (pass ? "pass" : "fail");
+  verdictEl.textContent = pass
+    ? "✓ Nota aprobatoria — El estudiante aprueba el período"
+    : "✗ Nota reprobatoria — El estudiante no alcanza el mínimo";
+  bdEl.innerHTML = breakdownHTML;
+}
+
+buildUI();
+</script>
+</body>
+</html>
