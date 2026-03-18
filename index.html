@@ -539,6 +539,7 @@
   </footer>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <script>
 const SECTIONS = [
   { id: "eval",          label: "EVALUACIONES ORALES Y ESCRITAS",   pct: 30 },
@@ -733,33 +734,86 @@ function formatDate(date) {
 }
 
 function downloadReport() {
-  if (!lastCalculation) return;
+  if (!lastCalculation || !window.jspdf?.jsPDF) return;
 
-  const lines = [
-    'Colegio Franciscano Agustín Gemelli',
-    'Comprobante de validación de nota final',
-    '',
-    `Fecha de generación: ${formatDate(lastCalculation.generatedAt)}`,
-    `Nota final calculada: ${lastCalculation.total}`,
-    `Resultado: ${lastCalculation.verdict}`,
-    '',
-    'Detalle por componente:',
-    ...lastCalculation.breakdown.map(item => (
-      `- ${item.label}: promedio ${item.avg.toFixed(2)} con ${item.count || 0} nota(s), aporta ${item.contrib.toFixed(2)} del ${item.pct}%`
-    )),
-    '',
-    'Este archivo es solo de referencia y no reemplaza el boletín oficial.'
-  ];
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const marginX = 48;
+  let cursorY = 56;
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const maxWidth = doc.internal.pageSize.getWidth() - marginX * 2;
 
-  const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `validacion-nota-final-${lastCalculation.generatedAt.toISOString().slice(0,10)}.txt`;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
+  const writeBlock = (text, options = {}) => {
+    const {
+      fontSize = 11,
+      fontStyle = 'normal',
+      color = [61, 66, 96],
+      lineHeight = 16,
+      gapAfter = 0,
+    } = options;
+
+    doc.setFont('helvetica', fontStyle);
+    doc.setFontSize(fontSize);
+    doc.setTextColor(...color);
+
+    const lines = Array.isArray(text) ? text : doc.splitTextToSize(text, maxWidth);
+    lines.forEach(line => {
+      if (cursorY > pageHeight - 56) {
+        doc.addPage();
+        cursorY = 56;
+      }
+      doc.text(line, marginX, cursorY);
+      cursorY += lineHeight;
+    });
+
+    cursorY += gapAfter;
+  };
+
+  writeBlock('Colegio Franciscano Agustín Gemelli', {
+    fontSize: 18,
+    fontStyle: 'bold',
+    color: [11, 47, 110],
+    lineHeight: 22,
+    gapAfter: 8,
+  });
+
+  writeBlock('Comprobante de validación de nota final', {
+    fontSize: 13,
+    fontStyle: 'bold',
+    color: [201, 149, 58],
+    lineHeight: 18,
+    gapAfter: 12,
+  });
+
+  writeBlock(`Fecha de generación: ${formatDate(lastCalculation.generatedAt)}`, { gapAfter: 2 });
+  writeBlock(`Nota final calculada: ${lastCalculation.total}`, {
+    fontSize: 12,
+    fontStyle: 'bold',
+    color: [30, 138, 94],
+    gapAfter: 2,
+  });
+  writeBlock(`Resultado: ${lastCalculation.verdict}`, { gapAfter: 14 });
+  writeBlock('Detalle por componente:', {
+    fontSize: 12,
+    fontStyle: 'bold',
+    color: [11, 47, 110],
+    gapAfter: 6,
+  });
+
+  lastCalculation.breakdown.forEach(item => {
+    writeBlock(
+      `• ${item.label}: promedio ${item.avg.toFixed(2)} con ${item.count || 0} nota(s), aporta ${item.contrib.toFixed(2)} del ${item.pct}%`,
+      { gapAfter: 4 }
+    );
+  });
+
+  writeBlock('Este archivo es solo de referencia y no reemplaza el boletín oficial.', {
+    fontSize: 10,
+    color: [122, 129, 160],
+    lineHeight: 14,
+  });
+
+  doc.save(`validacion-nota-final-${lastCalculation.generatedAt.toISOString().slice(0,10)}.pdf`);
 }
 
 buildUI();
