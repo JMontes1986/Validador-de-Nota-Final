@@ -23,6 +23,7 @@
     --danger: #d94040;
     --success: #1e8a5e;
     --success-bg: #e8f7f1;
+    --success-border: #8fd9b8;
     --fail-bg: #fdeaea;
     --shadow-sm: 0 2px 8px rgba(11,47,110,0.08);
     --shadow-md: 0 8px 30px rgba(11,47,110,0.12);
@@ -53,7 +54,7 @@
   .page-wrapper {
     position: relative;
     z-index: 1;
-    max-width: 780px;
+    max-width: 1120px;
     margin: 0 auto;
     padding: 30px 20px 60px;
   }
@@ -138,6 +139,82 @@
     color: #5a3e0e;
   }
 
+  .workspace {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr);
+    gap: 24px;
+    align-items: start;
+  }
+
+  .input-column,
+  .summary-column {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .intro-card {
+    background: rgba(255,255,255,0.9);
+    border: 1px solid rgba(201,149,58,0.18);
+    border-radius: var(--radius);
+    padding: 20px 22px;
+    box-shadow: var(--shadow-sm);
+    animation: fadeUp 0.5s 0.12s ease both;
+  }
+
+  .intro-title {
+    font-size: 20px;
+    color: var(--navy);
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  .intro-copy {
+    color: var(--gray-500);
+    line-height: 1.6;
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+
+  .intro-steps {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+  }
+
+  .step-card {
+    background: var(--gray-50);
+    border: 1px solid var(--gray-100);
+    border-radius: 12px;
+    padding: 14px;
+  }
+
+  .step-card span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: rgba(11,47,110,0.08);
+    color: var(--navy);
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+
+  .step-card strong {
+    display: block;
+    color: var(--navy);
+    margin-bottom: 4px;
+    font-size: 14px;
+  }
+
+  .step-card p {
+    font-size: 13px;
+    color: var(--gray-500);
+    line-height: 1.5;
+  }
+ 
   /* ─── Card ─── */
   .card {
     background: var(--white);
@@ -307,9 +384,10 @@
     color: white;
     border-radius: var(--radius);
     padding: 28px 24px;
+    position: sticky;
+    top: 24px;
     box-shadow: var(--shadow-lg);
     animation: fadeUp 0.5s 0.4s ease both;
-    position: relative;
     overflow: hidden;
   }
 
@@ -358,6 +436,18 @@
     margin-top: 6px;
   }
 
+  .summary-hint {
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: var(--success-bg);
+    border: 1px solid var(--success-border);
+    border-radius: 12px;
+    color: var(--success);
+    font-size: 13px;
+    line-height: 1.5;
+    font-weight: 500;
+  }
+ 
   .summary-breakdown {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
@@ -484,8 +574,19 @@
     to   { opacity: 1; transform: translateX(0); }
   }
 
-  @media (max-width: 500px) {
+ @media (max-width: 960px) {
+    .workspace {
+      grid-template-columns: 1fr;
+    }
+
+    .summary-card {
+      position: static;
+    }
+  }
+ 
+ @media (max-width: 500px) {
     .summary-breakdown { grid-template-columns: repeat(2, 1fr); }
+  .intro-steps { grid-template-columns: 1fr; }
   }
 </style>
 </head>
@@ -507,23 +608,50 @@
   <div class="notice">
     <span class="notice-icon">🛡️</span>
     <div class="notice-text">
-      <strong>Herramienta de prueba — Control Académic</strong>
+      <strong>Herramienta de prueba — Control Académico</strong>
       Esta calculadora es únicamente para validar y verificar las notas del sistema académico. <strong>No se almacena, guarda ni transmite ningún dato</strong>. Todo el cálculo ocurre localmente en tu dispositivo.
     </div>
   </div>
 
-  <!-- Grade sections -->
-  <div id="sections-container"></div>
+  <div class="workspace">
+    <section class="input-column">
+      <div class="intro-card">
+        <div class="intro-title">Organiza el cálculo por componentes</div>
+        <p class="intro-copy">Ingresa las notas de cada área, revisa el promedio parcial y finalmente calcula la nota final con un resumen listo para compartir.</p>
+        <div class="intro-steps">
+          <div class="step-card">
+            <span>1</span>
+            <strong>Agrega notas</strong>
+            <p>Puedes registrar una o varias calificaciones por cada componente.</p>
+          </div>
+          <div class="step-card">
+            <span>2</span>
+            <strong>Verifica promedios</strong>
+            <p>Cada tarjeta muestra el aporte acumulado según su porcentaje.</p>
+          </div>
+          <div class="step-card">
+            <span>3</span>
+            <strong>Descarga el soporte</strong>
+            <p>Al calcular podrás generar un PDF con el detalle de la validación.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Grade sections -->
+      <div id="sections-container"></div>
 
   <!-- Calculate button -->
-  <button class="calc-btn" onclick="calcular()">✦ Calcular Nota Final</button>
+      <button class="calc-btn" onclick="calcular()">✦ Calcular Nota Final</button>
+    </section>
 
-  <!-- Summary -->
-  <div class="summary-card" id="summary" style="display:none; margin-top:20px;">
+  <aside class="summary-column">
+      <!-- Summary -->
+      <div class="summary-card" id="summary" style="display:none;">
     <div style="position:relative;z-index:1;">
       <div class="summary-label">Nota Final Calculada</div>
       <div class="summary-score" id="score-display">—</div>
       <div class="summary-verdict" id="verdict-display"></div>
+      <div class="summary-hint" id="pdf-hint">Al momento de realizar el cálculo de la nota puedes descargar la información en un archivo PDF.</div>
       <div class="summary-breakdown" id="breakdown-display"></div>
       <div class="actions-bar">
         <button class="download-btn" id="download-report-btn" onclick="downloadReport()">
@@ -532,6 +660,8 @@
       </div>
       <div class="summary-note" id="summary-note"></div>
     </div>
+      </div>
+    </aside>
   </div>
 
   <footer>
