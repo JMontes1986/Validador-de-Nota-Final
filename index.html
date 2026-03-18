@@ -416,6 +416,49 @@
   .calc-btn:hover { background: #b8841e; box-shadow: 0 6px 28px rgba(201,149,58,0.45); }
   .calc-btn:active { transform: scale(0.98); }
 
+  .actions-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 18px;
+    position: relative;
+    z-index: 1;
+  }
+
+  .download-btn {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px 16px;
+    background: rgba(255,255,255,0.12);
+    color: white;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s, border-color 0.2s;
+  }
+
+  .download-btn:hover {
+    background: rgba(255,255,255,0.18);
+    border-color: rgba(255,255,255,0.32);
+  }
+
+  .download-btn:active { transform: scale(0.98); }
+
+  .summary-note {
+    margin-top: 14px;
+    font-size: 12px;
+    line-height: 1.5;
+    opacity: 0.72;
+    position: relative;
+    z-index: 1;
+  }
+ 
   /* ─── Footer ─── */
   footer {
     text-align: center;
@@ -482,6 +525,12 @@
       <div class="summary-score" id="score-display">—</div>
       <div class="summary-verdict" id="verdict-display"></div>
       <div class="summary-breakdown" id="breakdown-display"></div>
+      <div class="actions-bar">
+        <button class="download-btn" id="download-report-btn" onclick="downloadReport()">
+          <span>⬇</span> Descargar validación
+        </button>
+      </div>
+      <div class="summary-note" id="summary-note"></div>
     </div>
   </div>
 
@@ -499,7 +548,9 @@ const SECTIONS = [
   { id: "autoevaluacion",label: "AUTOEVALUACIÓN Y COEVALUACION",  pct: 5  },
 ];
 
-// Build UI
+let lastCalculation = null;
+ 
+ // Build UI
 function buildUI() {
   const container = document.getElementById("sections-container");
   SECTIONS.forEach((sec, si) => {
@@ -623,34 +674,92 @@ function updateAvg(secId) {
 
 function calcular() {
   let total = 0;
-  const breakdownHTML = SECTIONS.map(sec => {
+  const breakdown = SECTIONS.map(sec => {
     const vals = getGrades(sec.id);
-    let avg = vals.length ? vals.reduce((a,b) => a+b, 0) / vals.length : 0;
+    const avg = vals.length ? vals.reduce((a,b) => a+b, 0) / vals.length : 0;
     const contrib = avg * (sec.pct / 100);
     total += contrib;
-    return `
-      <div class="breakdown-item">
-        <div class="breakdown-name">${sec.label}</div>
-        <div class="breakdown-val">${avg.toFixed(2)}</div>
-        <div class="breakdown-contrib">Aporta ${contrib.toFixed(2)} / ${sec.pct}%</div>
-      </div>`;
-  }).join("");
+    return {
+      label: sec.label,
+      pct: sec.pct,
+      avg,
+      contrib,
+      count: vals.length,
+    };
+  });
 
-  const scoreEl   = document.getElementById("score-display");
+  const breakdownHTML = breakdown.map(item => `
+      <div class="breakdown-item">
+        <div class="breakdown-name">${item.label}</div>
+        <div class="breakdown-val">${item.avg.toFixed(2)}</div>
+        <div class="breakdown-contrib">Aporta ${item.contrib.toFixed(2)} / ${item.pct}%</div>
+      </div>`
+  ).join("");
+
+  const scoreEl = document.getElementById("score-display");
   const verdictEl = document.getElementById("verdict-display");
   const summaryEl = document.getElementById("summary");
-  const bdEl      = document.getElementById("breakdown-display");
+  const bdEl = document.getElementById("breakdown-display");
+  const downloadBtn = document.getElementById("download-report-btn");
+  const summaryNote = document.getElementById("summary-note");
 
   summaryEl.style.display = "block";
   summaryEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
 
   const pass = total >= 3;
   scoreEl.textContent = total.toFixed(2);
-  scoreEl.className   = "summary-score " + (pass ? "pass" : "fail");
+  scoreEl.className = "summary-score " + (pass ? "pass" : "fail");
   verdictEl.textContent = pass
     ? "✓ Nota aprobatoria — El estudiante aprueba el período"
     : "✗ Nota reprobatoria — El estudiante no alcanza el mínimo";
   bdEl.innerHTML = breakdownHTML;
+ downloadBtn.style.display = "inline-flex";
+
+  lastCalculation = {
+    total: total.toFixed(2),
+    verdict: verdictEl.textContent,
+    breakdown,
+    generatedAt: new Date(),
+  };
+
+  summaryNote.textContent = `Validación generada el ${formatDate(lastCalculation.generatedAt)}. Puedes descargar un comprobante con el detalle para compartirlo con la familia.`;
+}
+
+function formatDate(date) {
+  return new Intl.DateTimeFormat('es-CO', {
+    dateStyle: 'long',
+    timeStyle: 'short'
+  }).format(date);
+}
+
+function downloadReport() {
+  if (!lastCalculation) return;
+
+  const lines = [
+    'Colegio Franciscano Agustín Gemelli',
+    'Comprobante de validación de nota final',
+    '',
+    `Fecha de generación: ${formatDate(lastCalculation.generatedAt)}`,
+    `Nota final calculada: ${lastCalculation.total}`,
+    `Resultado: ${lastCalculation.verdict}`,
+    '',
+    'Detalle por componente:',
+    ...lastCalculation.breakdown.map(item => (
+      `- ${item.label}: promedio ${item.avg.toFixed(2)} con ${item.count || 0} nota(s), aporta ${item.contrib.toFixed(2)} del ${item.pct}%`
+    )),
+    '',
+    'Este archivo es solo de referencia y no reemplaza el boletín oficial.'
+  ];
+
+  const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `validacion-nota-final-${lastCalculation.generatedAt.toISOString().slice(0,10)}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
 }
 
 buildUI();
