@@ -617,12 +617,12 @@
     <section class="input-column">
       <div class="intro-card">
         <div class="intro-title">Organiza el cálculo por componentes</div>
-        <p class="intro-copy">Ingresa las notas de cada área, revisa el promedio parcial y finalmente calcula la nota final con un resumen listo para compartir.</p>
+        <p class="intro-copy">Ingresa las notas de cada asignatura, revisa el promedio parcial y finalmente calcula la nota final con un resumen listo para compartir.</p>
         <div class="intro-steps">
           <div class="step-card">
             <span>1</span>
-            <strong>Agrega notas</strong>
-            <p>Puedes registrar una o varias calificaciones por cada componente.</p>
+            <strong>Agrega indicadores</strong>
+            <p>Puedes registrar una o varios indicadores por cada definición de nota.</p>
           </div>
           <div class="step-card">
             <span>2</span>
@@ -700,7 +700,7 @@ function buildUI() {
       <div class="card-body" id="body-${sec.id}">
         <div class="grades-list" id="list-${sec.id}"></div>
         <button class="add-btn" onclick="addGrade('${sec.id}')">
-          <span>＋</span> Agregar nota
+          <span>＋</span> Agregar indicador
         </button>
         <div class="grade-formula" id="formula-${sec.id}">Promedio: —</div>
       </div>
@@ -728,7 +728,7 @@ function addGrade(secId) {
   row.id = `row-${secId}-${idx}`;
 
   row.innerHTML = `
-    <span class="grade-label">Nota ${idx}</span>
+    <span class="grade-label">Indicador ${idx}</span>
     <div class="grade-input-wrap">
       <input class="grade-input"
              type="number"
@@ -868,18 +868,40 @@ function downloadReport() {
 
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ unit: 'pt', format: 'a4' });
-  const marginX = 48;
-  let cursorY = 56;
+  const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
-  const maxWidth = doc.internal.pageSize.getWidth() - marginX * 2;
+  const marginX = 42;
+  const contentWidth = pageWidth - marginX * 2;
+  let cursorY = 0;
 
-  const writeBlock = (text, options = {}) => {
+  const palette = {
+    navy: [11, 47, 110],
+    navySoft: [26, 74, 158],
+    gold: [201, 149, 58],
+    text: [61, 66, 96],
+    muted: [122, 129, 160],
+    border: [226, 230, 240],
+    surface: [248, 249, 252],
+    success: [30, 138, 94],
+    successBg: [232, 247, 241],
+    fail: [217, 64, 64],
+    failBg: [253, 234, 234],
+  };
+
+  const ensureSpace = (heightNeeded) => {
+    if (cursorY + heightNeeded <= pageHeight - 42) return;
+    doc.addPage();
+    cursorY = 42;
+  };
+
+  const writeText = (text, x, y, options = {}) => {
     const {
+      maxWidth = contentWidth,
       fontSize = 11,
       fontStyle = 'normal',
-      color = [61, 66, 96],
-      lineHeight = 16,
-      gapAfter = 0,
+      color = palette.text,
+      align = 'left',
+      lineHeight = fontSize * 1.35,
     } = options;
 
     doc.setFont('helvetica', fontStyle);
@@ -887,60 +909,149 @@ function downloadReport() {
     doc.setTextColor(...color);
 
     const lines = Array.isArray(text) ? text : doc.splitTextToSize(text, maxWidth);
-    lines.forEach(line => {
-      if (cursorY > pageHeight - 56) {
-        doc.addPage();
-        cursorY = 56;
-      }
-      doc.text(line, marginX, cursorY);
-      cursorY += lineHeight;
-    });
-
-    cursorY += gapAfter;
+    doc.text(lines, x, y, { align, maxWidth, lineHeightFactor: lineHeight / fontSize });
+    return lines.length * lineHeight;
   };
 
-  writeBlock('Colegio Franciscano Agustín Gemelli', {
-    fontSize: 18,
-    fontStyle: 'bold',
-    color: [11, 47, 110],
-    lineHeight: 22,
-    gapAfter: 8,
-  });
+  const drawRoundedRect = (x, y, w, h, fillColor, borderColor = null) => {
+    if (fillColor) {
+      doc.setFillColor(...fillColor);
+    }
+    if (borderColor) {
+      doc.setDrawColor(...borderColor);
+      doc.roundedRect(x, y, w, h, 16, 16, 'FD');
+    } else {
+      doc.roundedRect(x, y, w, h, 16, 16, 'F');
+    }
+  };
 
-  writeBlock('Comprobante de validación de nota final', {
-    fontSize: 13,
-    fontStyle: 'bold',
-    color: [201, 149, 58],
-    lineHeight: 18,
-    gapAfter: 12,
-  });
+  const verdictIsPass = Number(lastCalculation.total) >= 3;
+  const verdictLabel = verdictIsPass ? 'Aprobada' : 'Reprobada';
+  const verdictDetail = verdictIsPass
+    ? 'El estudiante aprueba el período.'
+    : 'El estudiante no alcanza el mínimo esperado.';
 
-  writeBlock(`Fecha de generación: ${formatDate(lastCalculation.generatedAt)}`, { gapAfter: 2 });
-  writeBlock(`Nota final calculada: ${lastCalculation.total}`, {
+  drawRoundedRect(28, 28, pageWidth - 56, pageHeight - 56, [255, 255, 255], palette.border);
+  drawRoundedRect(28, 28, pageWidth - 56, 108, palette.surface);
+  doc.setFillColor(...palette.navy);
+  doc.roundedRect(28, 28, pageWidth - 56, 108, 16, 16, 'F');
+  doc.setFillColor(...palette.gold);
+  doc.circle(70, 82, 18, 'F');
+  writeText('🎓', 70, 88, { fontSize: 16, align: 'center', color: [255, 255, 255], maxWidth: 20 });
+  writeText('Colegio Franciscano Agustín Gemelli', 104, 70, {
+    fontSize: 21,
+    fontStyle: 'bold',
+    color: [255, 255, 255],
+    maxWidth: contentWidth - 72,
+  });
+  writeText('Comprobante de validación de nota final', 104, 96, {
     fontSize: 12,
     fontStyle: 'bold',
-    color: [30, 138, 94],
-    gapAfter: 2,
+    color: [255, 243, 214],
+    maxWidth: contentWidth - 72,
   });
-  writeBlock(`Resultado: ${lastCalculation.verdict}`, { gapAfter: 14 });
-  writeBlock('Detalle por componente:', {
-    fontSize: 12,
+
+  cursorY = 154;
+ 
+   drawRoundedRect(marginX, cursorY, contentWidth, 102, [255, 248, 236], [240, 192, 107]);
+  writeText(`Generado el ${formatDate(lastCalculation.generatedAt)}`, marginX + 18, cursorY + 24, {
+    fontSize: 11,
+    color: [122, 90, 30],
+  });
+  writeText('Resumen general', marginX + 18, cursorY + 48, {
+    fontSize: 16,
     fontStyle: 'bold',
-    color: [11, 47, 110],
-    gapAfter: 6,
+    color: palette.navy,
+  });
+  writeText(`Nota final: ${lastCalculation.total}`, marginX + 18, cursorY + 74, {
+    fontSize: 22,
+    fontStyle: 'bold',
+    color: verdictIsPass ? palette.success : palette.fail,
   });
 
-  lastCalculation.breakdown.forEach(item => {
-    writeBlock(
-      `• ${item.label}: promedio ${item.avg.toFixed(2)} con ${item.count || 0} nota(s), aporta ${item.contrib.toFixed(2)} del ${item.pct}%`,
-      { gapAfter: 4 }
-    );
+  const badgeWidth = 136;
+  const badgeX = marginX + contentWidth - badgeWidth - 18;
+  const badgeY = cursorY + 22;
+  drawRoundedRect(badgeX, badgeY, badgeWidth, 56, verdictIsPass ? palette.successBg : palette.failBg, verdictIsPass ? palette.success : palette.fail);
+  writeText(verdictLabel, badgeX + badgeWidth / 2, badgeY + 24, {
+    fontSize: 14,
+    fontStyle: 'bold',
+    color: verdictIsPass ? palette.success : palette.fail,
+    align: 'center',
+    maxWidth: badgeWidth - 16,
+  });
+  writeText(verdictDetail, badgeX + badgeWidth / 2, badgeY + 42, {
+    fontSize: 9,
+    color: palette.text,
+    align: 'center',
+    maxWidth: badgeWidth - 18,
+    lineHeight: 11,
   });
 
-  writeBlock('Este archivo es solo de referencia y no reemplaza el boletín oficial.', {
+  cursorY += 126;
+  ensureSpace(40);
+  writeText('Detalle por componente', marginX, cursorY, {
+    fontSize: 15,
+    fontStyle: 'bold',
+    color: palette.navy,
+  });
+  cursorY += 22;
+  writeText('Cada bloque resume el promedio registrado, la cantidad de indicadores y el aporte al cálculo final.', marginX, cursorY, {
     fontSize: 10,
-    color: [122, 129, 160],
-    lineHeight: 14,
+    color: palette.muted,
+  });
+  cursorY += 28;
+ 
+  lastCalculation.breakdown.forEach(item => {
+    const cardHeight = 88;
+    ensureSpace(cardHeight + 12);
+    drawRoundedRect(marginX, cursorY, contentWidth, cardHeight, [255, 255, 255], palette.border);
+
+    doc.setFillColor(...palette.navy);
+    doc.roundedRect(marginX + 16, cursorY + 16, 64, 26, 13, 13, 'F');
+    writeText(`${item.pct}%`, marginX + 48, cursorY + 33, {
+      fontSize: 11,
+      fontStyle: 'bold',
+      color: [255, 255, 255],
+      align: 'center',
+      maxWidth: 48,
+    });
+
+    writeText(item.label, marginX + 94, cursorY + 28, {
+      fontSize: 11,
+      fontStyle: 'bold',
+      color: palette.navy,
+      maxWidth: contentWidth - 190,
+      lineHeight: 14,
+    });
+
+    const metricsY = cursorY + 58;
+    const boxWidth = (contentWidth - 126) / 3;
+    [
+      { title: 'Promedio', value: item.avg.toFixed(2) },
+      { title: 'Indicadores', value: String(item.count || 0) },
+      { title: 'Aporte', value: item.contrib.toFixed(2) },
+    ].forEach((metric, index) => {
+      const x = marginX + 94 + index * (boxWidth + 8);
+      drawRoundedRect(x, metricsY - 16, boxWidth, 28, palette.surface, palette.border);
+      writeText(`${metric.title}: ${metric.value}`, x + 10, metricsY + 2, {
+        fontSize: 9.5,
+        fontStyle: 'bold',
+        color: palette.text,
+        maxWidth: boxWidth - 20,
+      });
+    });
+
+    cursorY += cardHeight + 12;
+  });
+
+  ensureSpace(64);
+  drawRoundedRect(marginX, cursorY, contentWidth, 46, palette.surface, palette.border);
+  writeText('Este comprobante es de referencia y conserva el estilo de la aplicación para facilitar su lectura. No reemplaza el boletín oficial.', marginX + 16, cursorY + 20, {
+    fontSize: 9.5,
+    color: palette.muted,
+    maxWidth: contentWidth - 32,
+    lineHeight: 12,
   });
 
   doc.save(`validacion-nota-final-${lastCalculation.generatedAt.toISOString().slice(0,10)}.pdf`);
